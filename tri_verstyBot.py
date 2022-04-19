@@ -1,8 +1,7 @@
 import logging
 from create_bot import dp
 from aiogram.utils import executor
-from handlers import client, admin, other
-from handlers import weather
+from handlers import client, other
 
 logging.basicConfig(level=logging.INFO)
 
