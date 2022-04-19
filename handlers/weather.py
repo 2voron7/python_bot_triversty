@@ -1,67 +1,38 @@
-from unicodedata import name
-from aiogram import types
-from aiogram.utils import executor
-from create_bot import dp, bot
+from aiogram import Dispatcher, types
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from create_bot import dp
 from pyowm import OWM
 from pyowm.utils import config
-import datetime as dtm
 
-
-from handlers.other import message_filter
-# from pyowm.utils.config import get_default_config
-# from pyowm.utils import timestamps
-# language = "ru"
-
-# config_dict = get_default_config()
 config_dict = config.get_default_config_for_subscription_type('professional')
 config_dict['language'] = 'ru' 
 
 owm = OWM('127934e41dc5667bf248c54d9435ea1a', config_dict)
 mgr = owm.weather_manager()
 
-# async def answer_user_bot(data):
-#     pass
+class FSMWeather(StatesGroup):
+    city = State()
 
-# async def parse_weather_data(data):
-#     pass
-
-# async def get_weather(location):
-#     pass
-
-# async def get_message(data):
-#     return data['message']['text']
-
-
-# one_call = mgr.one_call(lat=52.5244, lon=13.4105)
-
-# place = input("Введите город/страну: ")
-# place = "Grodno"
-
-# forecast = mgr.forecast_at_place(place, 'daily')
-
-# observation = mgr.weather_at_place('Grodno')
-# w = observation.weather
-
-# current_temp = w.temperature
-# @dp.message_handler(commands = ["city"])
-# 
-
-@dp.message_handler(commands=['Погода']) #content_types= ['text'])
+@dp.message_handler(commands=['Погода'], state=None)
 async def weather(message: types.Message):
-    await bot.send_message(message.from_user.id, "Город?")
+    await FSMWeather.city.set()
+    await message.reply('Город?')
 
-#   mgr.run_once(dtm.datetime.now(), context=update.effective_chat.id)
-@dp.message_handler(content_types=['text'])
-async def echo(message: types.Message):
+@dp.message_handler(content_types=['text'], state=FSMWeather.city)
+async def city(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['city'] = message.text
+    
     try:
         observation = mgr.weather_at_place(str(message.text))
         w = observation.weather
         a = w.detailed_status
-        b = w.wind() 
-        c = ("Температура на градуснике: " + str(w.temperature('celsius')['temp']) + "°С" + "\nПо ощущению: " + str(w.temperature('celsius')['feels_like']) + "°С")
+        # b = w.wind() 
+        c = ("Температура на градуснике: " + "\n" + str(w.temperature('celsius')['temp']) + "°С" + "\n\nПо ощущению: " + str(w.temperature('celsius')['feels_like']) + "°С")
         d = (w.temperature('celsius')['feels_like'])
-        e = w.rain
-        f = w.clouds
+        # e = w.rain
+        # f = w.clouds
 
         # current_temp = w.temperature ('celsius')["temp"]
 
@@ -96,14 +67,13 @@ async def echo(message: types.Message):
         # await message.answer (w.rain)                    # {}
         # await message.answer (w.heat_index)              # None
         # await message.answer (w.clouds)                  # 75
-        await message.answer(str(a) + "\n" + str(b) + "\n" + c + "\n" + str(d) + "\n" + str(e) + "\n" + str(f))
+        await message.answer(str(a) + "\n" + c + "\n" + str(d))
     except:
         await message.reply("Ты что мне тут вводишь?")
-# answer = forecast.will_be_clear_at(timestamps.tomorrow())
+        # answer = forecast.will_be_clear_at(timestamps.tomorrow())
 
-# print(a)
+    # await message.reply(data['city'])
+    await state.finish()
 
-# await bot.send_message(message.from_user.id, message.answer)
-
-if __name__ == "__main__":
-    executor.start_polling(dp)
+def register_handlers_weather(dp:Dispatcher):
+    dp.register_message_handler(weather, commands=['Погода'])

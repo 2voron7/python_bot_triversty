@@ -8,7 +8,26 @@ from create_bot import dp, bot
 from aiogram.types import ReplyKeyboardRemove, \
     ReplyKeyboardMarkup, KeyboardButton, \
     InlineKeyboardMarkup, InlineKeyboardButton
-from handlers import weather
+
+from aiogram import types
+# from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from create_bot import dp
+# from handlers import weather
+
+# from aiogram.utils import executor
+from pyowm import OWM
+from pyowm.utils import config
+# import datetime as dtm
+
+
+
+config_dict = config.get_default_config_for_subscription_type('professional')
+config_dict['language'] = 'ru' 
+
+owm = OWM('127934e41dc5667bf248c54d9435ea1a', config_dict)
+mgr = owm.weather_manager()
 
 help_button = KeyboardButton('/Помощь')
 vk_button = KeyboardButton('/ВК')
@@ -53,27 +72,48 @@ https://vk.com/kubok_tri_versty
 """, reply_markup=(help_kb))
     await message.delete()
 
+# @dp.message_handler(commands=['Погода']) #content_types= ['text'])
+# async def weather(message: types.Message):
+#     await bot.send_message(message.from_user.id, "Город?")
 
 # Тут по идее будешь встраивать погоду
-@dp.message_handler(commands=['Погода'])
-# async def get_weather(location):
-    # bot = constants.WEATHER_URL.format(city=location,
-    #                                 token=Constant.WEATHER_TOKEN)
-# @dp.message_handler(commands = ["Город"])
+# @dp.message_handler(commands=['Погода'])
+# # async def get_weather(location):
+# #     # bot = constants.WEATHER_URL.format(city=location,
+# #     #                                 token=Constant.WEATHER_TOKEN)
+# # # @dp.message_handler(commands = ["Город"])
 
-async def weather(message:types.Message):
-    # await message.reply("Город? ")
-    bot.send_message(message.from_user.id, "Город?")
-    bot.register_next_step_handler(message, city_name)
-    await bot.send_message(message.from_user.id, weather, reply_markup=(help_kb))
+# async def Weather(message:types.Message):
+#     # await message.reply("Город? ")
+#     bot.send_message(message.from_user.id, "Город?")
+    # bot.register_next_step_handler(message, city_name)
+    # await bot.send_message(message.from_user.id, Weather, reply_markup=(help_kb))
     # await message.delete()
-async def city(message):
-    bot.send_message(message.from_user.id, "Город?")
-    bot.register_next_step_handler(message, city_name)
-async def city_name(message):
-    global name
-    name = message.text
+# async def city(message):
+#     bot.send_message(message.from_user.id, "Город?")
+#     bot.register_next_step_handler(message, city_name)
+# async def city_name(message):
+#     global name
+#     name = message.text
 
+
+
+# class FSMWeather(StatesGroup):
+#     city = State()
+
+
+# @dp.message_handler(commands=['Погода'], state=None)
+# async def gorod_start(message:types.Message):
+#     await FSMWeather.city.set()
+#     await message.reply('Город?')
+
+
+# @dp.message_handler(content_types=['text'], state=FSMWeather.city)
+# async def gorod_input(message:types.Message, state:FSMContext):
+#     async with state.proxy() as data: # Эта строчка открывает словарь data, то есть ее можно прописывать несколько раз, и под каждой что то делать с тем что получили от пользователя
+#         data['city'] = message.text
+#     await message.reply('Я понял, ты живешь в ' + data['city']) # Вместо этого получается мы сунем в погоду город
+#     await state.finish()
 
 # Приветствие новеньких
 # @dp.message_handler(content_types=['new_chat_members'])
@@ -96,6 +136,6 @@ def register_handlers_client(dp:Dispatcher):
     dp.register_message_handler(start, commands=['start'])
     dp.register_message_handler(help, commands=['Помощь'])
     dp.register_message_handler(vk_group, commands=['ВК'])
-    dp.register_message_handler(weather, commands=['Погода'])
+    # dp.register_message_handler(gorod_start, commands=['Погода'])
     dp.register_message_handler(user_joined, content_types=['new_chat_members'])
     dp.register_message_handler(user_left, content_types=['left_chat_member'])
